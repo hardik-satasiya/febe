@@ -104,8 +104,8 @@ class Settings extends Controller
          */
         if ($redirectUrl = post('redirect', true)) {
             $redirectUrl = ($item->context == 'mysettings')
-                ? 'system/settings/mysettings'
-                : 'system/settings';
+                ? 'admin/settings/settings/mysettings'
+                : 'admin/settings/settings';
 
             return Backend::redirect($redirectUrl);
         }
