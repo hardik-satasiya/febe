@@ -1,0 +1,10 @@
+itemcode: User
+navigation:
+    user:
+        label: Users
+        url: admin/user/users
+        icon: icon-user
+        permissions:
+            - app.users.access_users
+
+

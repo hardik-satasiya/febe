@@ -1,0 +1,26 @@
+# ===================================
+#  Column Definitions
+# ===================================
+
+columns:
+
+    id:
+        label: app::lang.group.id
+        invisible: true
+
+    name:
+        label: app::lang.group.name
+        searchable: true
+
+    code:
+        label: app::lang.group.code
+
+    created_at:
+        label: app::lang.group.created_at
+
+    users_count:
+        label: app::lang.group.users_count
+        relation: users_count
+        valueFrom: count
+        default: 0
+        sortable: false
