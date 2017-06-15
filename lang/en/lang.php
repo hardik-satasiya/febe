@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'app' => [
+        'name' => 'HS',
+        'tagline' => 'Login'
+    ],
     'users' => [
         'menu_label' => 'Users',
         'all_users' => 'All Users',

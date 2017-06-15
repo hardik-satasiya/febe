@@ -56,6 +56,7 @@ class MainSystemServiceProvider extends ModuleServiceProvider
         $this->registerRoutes();
         $this->registerHelpers();
         $this->registerTwigParser();
+        $this->registerMailer();
         $this->registerMailTemplates();
         $this->registerWidgets();
         $this->registerExceptionHandler();
@@ -202,6 +203,29 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 
         App::singleton('frontend.auth', function () {
             return \HS\AuthManager\FeAuthManager::instance();
+        });
+    }
+
+     /**
+     * Register mail templating and settings override.
+     */
+    protected function registerMailer()
+    {
+        /*
+         * Override system mailer with mail settings
+         */
+        Event::listen('mailer.beforeRegister', function () {
+            if (MailSetting::isConfigured()) {
+                MailSetting::applyConfigValues();
+            }
+        });
+
+        /*
+         * Override standard Mailer content with template
+         */
+        Event::listen('mailer.beforeAddContent', function ($mailer, $message, $view, $data) {
+            MailTemplate::addContentToMailer($message, $view, $data);
+            return false;
         });
     }
 
