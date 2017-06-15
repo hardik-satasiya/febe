@@ -1,3 +1,4 @@
 modules
 vendor
+storage
 composer.lock
