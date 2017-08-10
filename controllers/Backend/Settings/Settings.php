@@ -119,7 +119,7 @@ class Settings extends Controller
 
         Flash::success(Lang::get('backend::lang.form.reset_success'));
 
-        return Backend::redirect('system/settings/update/'.$author.'/'.$plugin.'/'.$code);
+        return Backend::redirect('admin/settings/settings/update/'.$author.'/'.$plugin.'/'.$code);
     }
 
     /**

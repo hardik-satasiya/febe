@@ -151,6 +151,7 @@ class MainSystemServiceProvider extends ModuleServiceProvider
         Route::any(Config::get('hs.backendUri', 'admin'), '\HS\Classes\BackendController@run');
 
         Route::group(['prefix' => Config::get('hs.backendUri', 'admin')], function () {
+            Route::any('/', '\HS\Classes\BackendController@run');
             Route::any('{slug}', '\HS\Classes\BackendController@run')->where('slug', '(.*)?');
         });
 
