@@ -6,6 +6,7 @@ use Auth;
 use Lang;
 use View;
 use Flash;
+use Schema;
 use Config;
 use Request;
 use Backend;
@@ -130,6 +131,15 @@ class Controller extends Extendable
      */
     public function __construct()
     {
+
+        $firstUp = !Schema::hasTable(Config::get('database.migrations', 'migrations'));
+        if ($firstUp) {
+            $updater = call_user_func('System\Classes\UpdateManager::instance');
+            echo "<pre/>";print_r('updating DB ... ');
+            $updater->update();
+            echo "<pre/>";print_r('updating DB Done Please Refresh ... ');
+            exit();
+        }
 
         /*
          * Allow early access to route data.

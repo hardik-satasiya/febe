@@ -1,10 +1,16 @@
 <?php namespace HS\Controllers\Backend\User;
 
+use App;
 use Auth;
+use Schema;
 use Lang;
 use Flash;
+use Yaml;
+use Redirect;
 use BackendMenu;
 use BackendAuth;
+use HS\Classes\DbTableVersionManager;
+use System\Classes\VersionManager;
 use HS\Controllers\Backend\BaseController;
 use System\Classes\SettingsManager;
 use HS\Models\User\User;
@@ -27,21 +33,90 @@ class Users extends BaseController
 
     public $requiredPermissions = ['app.users.access_users'];
 
-    public $bodyClass = 'compact-container';
+    public $bodyClass = 'slim-container';
 
     public function __construct()
     {
-        $this->assetPath = '/assets';
+        // $this->assetPath = '/assets';
         parent::__construct();
 
-        BackendMenu::setContext('HS.User', 'user');
+        // BackendMenu::setContext('HS.User', 'user');
+
+        BackendMenu::setContext('HS.System', 'system', 'users');
+        SettingsManager::setContext('HS.System', 'administrators');
         // SettingsManager::setContext('HS.User', 'settings');
     }
 
     public function index()
     {
+
+        $setupDone = Schema::hasTable('users');
+        if (!$setupDone) {
+            return $this->setupFeUsers();
+        }
+
+
         $this->addJs('js/backend/users/bulk-actions.js');
         $this->asExtension('ListController')->index();
+    }
+
+    public function setupFeUsers() {
+        // users
+        return $this->makePartial('set_up_fe_users');
+    }
+
+    public function onFeUsersSetup() {
+
+        $dbUpdater = DbTableVersionManager::instance();
+
+        // clear
+        $dbUpdater->clearDB('User');
+
+        // re install
+        $dbUpdater->updateDB('User');
+
+        // if needed.
+        // $dbUpdater->clearDB('User');
+
+        // update users
+        /*$versionInfo = Yaml::parseFile(base_path() . '/models/User/db_updates/version.yaml');
+        uksort($versionInfo, function ($a, $b) {
+            return version_compare($a, $b);
+        });
+
+
+        $notes = '';
+        foreach ($versionInfo as $key => $details) {
+
+            if (is_array($details)) {
+                $comment = array_shift($details);
+                $scripts = $details;
+            }
+            else {
+                $comment = $details;
+                $scripts = [];
+            }
+
+
+            $updater = new Updater;
+            foreach ($scripts as $script) {
+                $updateFile = base_path() . '/models/User/db_updates/' . $script;
+                $updater->setUp($updateFile);
+                $notes .= ' - ' .$script;
+            }
+        }*/
+
+        // users migrations
+        /*$migrator = App::make('migrator');
+        $migrator->run(base_path() . '/vendor/october/rain/src/Auth/Migrations/');
+        $notes = '';
+        foreach ($migrator->getNotes() as $note) {
+            $notes .= ' - '.$note;
+        }*/
+
+        // users
+        Flash::success('setup done : ' . $notes);
+        return Redirect::to('admin/user/users');
     }
 
     /**

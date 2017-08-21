@@ -21,7 +21,7 @@
                         $isActive = BackendMenu::isMainMenuItemActive($item);
                     ?>
                     <li class="<?= $isActive ? 'active' : null ?> svg-icon-container svg-active-effects">
-                        <a href="<?= Url::to($item->url) ?>">
+                        <a target="_self" href="<?= Url::to($item->url) ?>">
                             <span class="nav-icon">
                                 <?php if ($item->iconSvg): ?>
                                     <img class="svg-icon" src="<?= URL::asset($item->iconSvg) ?>">
@@ -60,7 +60,7 @@
                         <?php foreach ($mySettings as $category => $items): ?>
                             <?php foreach ($items as $item): ?>
                                 <li>
-                                    <a href="<?= $item->url ?>">
+                                    <a target="_self" href="<?= $item->url ?>">
                                         <?= e(trans($item->label)) ?>
                                     </a>
                                 </li>
@@ -69,7 +69,7 @@
                         <?php endforeach ?>
 
                         <li>
-                            <a href="<?= Backend::url(Config::get('cms.backendUri', 'admin') . '/auth/signout') ?>">
+                            <a target="_self" href="<?= Backend::url(Config::get('cms.backendUri', 'admin') . '/auth/signout') ?>">
                                 <?= e(trans('backend::lang.account.sign_out')) ?>
                             </a>
                         </li>

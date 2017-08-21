@@ -3,6 +3,7 @@
 use Flash;
 use BackendMenu;
 use HS\Controllers\Backend\BaseController;
+use System\Classes\SettingsManager;
 
 /**
  * User Groups Back-end Controller
@@ -23,6 +24,7 @@ class UserGroups extends BaseController
     {
         parent::__construct();
 
-        BackendMenu::setContext('HS.User', 'user', 'usergroups');
+        BackendMenu::setContext('HS.System', 'system', 'usergroups');
+        SettingsManager::setContext('HS.System', 'administrators');
     }
 }

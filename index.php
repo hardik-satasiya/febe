@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors',1);
-error_reporting(E_ALL);
-
 /**
  * October - The PHP platform that gets back to basics.
  *
