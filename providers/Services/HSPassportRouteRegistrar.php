@@ -37,16 +37,17 @@ class HSPassportRouteRegistrar
      */
     public function forAccessTokens()
     {
+        // Illuminate\Auth\AuthManager
 
         Route::group(['namespace' => '\HS\Controllers\Backend'], function() {
-            Route::post('/token', 'AccessTokenController@issueToken');
-            Route::get('/token', 'AccessTokenController@issueToken');
+            Route::post('/token', 'AccessToken@issueToken');
+            // Route::get('/token', 'AccessToken@issueToken');
             // Route::post('/token', function() {
             //     return ['new'];
             // });
         });
 
-        Route::group(['middleware' => ['auth']], function () {
+        Route::group(['middleware' => ['auth'], 'namespace' => '\Laravel\Passport\Http\Controllers'], function () {
             Route::get('/tokens', [
                 'uses' => 'AuthorizedAccessTokenController@forUser',
                 'namespace' => '\Laravel\Passport\Http\Controllers'

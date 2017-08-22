@@ -2,7 +2,7 @@
 
 use App;
 use Str;
-use FeAuth;
+use ApiAuth;
 use Lang;
 use View;
 use Flash;
@@ -37,7 +37,7 @@ use HS\Classes\FrontendController;
  * @package october\backend
  * @author Alexey Bobkov, Samuel Georges
  */
-class Controller extends Extendable
+class ApiController extends Extendable
 {
     use \System\Traits\ViewMaker;
     use \System\Traits\AssetMaker;
@@ -132,25 +132,7 @@ class Controller extends Extendable
     public function __construct()
     {
 
-        $firstUp = !Schema::hasTable(Config::get('database.migrations', 'migrations'));
-        if ($firstUp) {
-            $updater = call_user_func('System\Classes\UpdateManager::instance');
-            echo "<pre/>";print_r('updating DB ... ');
-            $updater->update();
-            echo "<pre/>";print_r('updating DB Done Please Refresh ... ');
-            exit();
-        }
-
-        /*
-         * Allow early access to route data.
-         */
-        if (App::runningInBackend()) {
-            $this->action = BackendController::$action;
-            $this->params = BackendController::$params;
-        } else {
-            $this->action = FrontendController::$action;
-            $this->params = FrontendController::$params;
-        }
+        $this->extendableConstruct();
 
         /*
          * Apply $guarded methods to hidden actions
@@ -220,94 +202,45 @@ class Controller extends Extendable
             return $event;
         }
 
+         $isPublicAction = in_array($action, $this->publicActions);
 
-        /* only for frontend */
-        if (!App::runningInBackend()) {
-            $ALLOW_ALL = 'all';
-            $ALLOW_GUEST = 'guest';
-            $ALLOW_USER = 'user';
+         /*
+         * Check that user is logged in and has permission to view this page
+         */
+        if (!$isPublicAction) {
 
-            $isAuthenticated = FeAuth::check();
-            $isPublicAction = in_array($action, $this->publicActions);
-
-            if (!$isPublicAction) {
-                $redirectUrl = 'login';
-                if (!$isAuthenticated && $this->allowedGroup == $ALLOW_USER) {
-                    // return Response::make('Forbidden', 403);
-                    return Redirect::guest($redirectUrl);
-                } elseif ($isAuthenticated && $this->allowedGroup == $ALLOW_GUEST) {
-                    // return Response::make('Forbidden', 403);
-                    return Redirect::guest($redirectUrl);
-                }
+            /*
+             * Not logged in
+             */
+            if (ApiAuth::guard()->guest()) {
+                return response('Unauthorized.', 401);
             }
 
-            // Create a new instance of the admin user
-            $this->user = FeAuth::getUser();
-        } /* only for backend */
-        else {
             /*
-             * Determine if this request is a public action.
+             * Check access groups against the page definition
              */
-            $isPublicAction = in_array($action, $this->publicActions);
-
-            // Create a new instance of the admin user
-            $this->user = BackendAuth::getUser();
-
-            /*
-             * Check that user is logged in and has permission to view this page
-             */
-            if (!$isPublicAction) {
-                /*
-                 * Not logged in, redirect to login screen or show ajax error.
-                 */
-                if (!BackendAuth::check()) {
-                    return Request::ajax()
-                        ? Response::make(Lang::get('backend::lang.page.access_denied.label'), 403)
-                        : Backend::redirectGuest( Config::get('hs.backendUri', 'admin') . '/auth');
-                }
-
-                /*
-                 * Check access groups against the page definition
-                 */
-                if ($this->requiredPermissions && !$this->user->hasAnyAccess($this->requiredPermissions)) {
-                    return Response::make(View::make('backend::access_denied'), 403);
-                }
+            if ($this->requiredPermissions && !$this->user->hasAnyAccess($this->requiredPermissions)) {
+                return Response::make(View::make('backend::access_denied'), 403);
             }
         }
 
         /*
          * Set the admin preference locale
          */
-        BackendPreference::setAppLocale();
-        BackendPreference::setAppFallbackLocale();
-
-        /*
-         * Execute AJAX event
-         */
-        if ($ajaxResponse = $this->execAjaxHandlers()) {
-            return $ajaxResponse;
-        }
-
-        /*
-         * Execute postback handler
-         */
-        if (($handler = post('_handler')) &&
-            ($handlerResponse = $this->runAjaxHandler($handler)) &&
-            $handlerResponse !== true
-        ) {
-            return $handlerResponse;
-        }
+        // BackendPreference::setAppLocale();
+        // BackendPreference::setAppFallbackLocale();
 
         /*
          * Execute page action
          */
-        $result = $this->execPageAction($action, $params);
+        $result = $this->execApiAction($action, $params);
 
         if (!is_string($result)) {
             return $result;
         }
 
-        return Response::make($result, $this->statusCode);
+        return ['result' => $result];
+        // return Response::make($result, $this->statusCode);
     }
 
     /**
@@ -392,7 +325,7 @@ class Controller extends Extendable
      * @param string $actionName Specifies a action name to execute.
      * @param array $parameters A list of the action parameters.
      */
-    protected function execPageAction($actionName, $parameters)
+    protected function execApiAction($actionName, $parameters)
     {
         $result = null;
 
@@ -407,13 +340,20 @@ class Controller extends Extendable
         // Execute the action
         $result = call_user_func_array([$this, $actionName], $parameters);
 
+
         // Expecting \Response and \RedirectResponse
         if ($result instanceof \Symfony\Component\HttpFoundation\Response) {
             return $result;
         }
 
+        if(is_array($result)) {
+            return $result;
+        }
+
+        return $result;
+
         // No page title
-        if (!$this->pageTitle) {
+        /*if (!$this->pageTitle) {
             $this->pageTitle = 'backend::lang.page.untitled';
         }
 
@@ -422,201 +362,7 @@ class Controller extends Extendable
             return $this->makeView($actionName);
         }
 
-        return $this->makeViewContent($result);
-    }
-
-    /**
-     * Returns the AJAX handler for the current request, if available.
-     * @return string
-     */
-    public function getAjaxHandler()
-    {
-        if (!Request::ajax() || Request::method() != 'POST') {
-            return null;
-        }
-
-        if ($handler = Request::header('X_OCTOBER_REQUEST_HANDLER')) {
-            return trim($handler);
-        }
-
-        return null;
-    }
-
-    /**
-     * This method is used internally.
-     * Invokes a controller event handler and loads the supplied partials.
-     */
-    protected function execAjaxHandlers()
-    {
-
-        if ($handler = $this->getAjaxHandler()) {
-            try {
-                /*
-                 * Validate the handler name
-                 */
-                if (!preg_match('/^(?:\w+\:{2})?on[A-Z]{1}[\w+]*$/', $handler)) {
-                    throw new SystemException(Lang::get('cms::lang.ajax_handler.invalid_name', ['name'=>$handler]));
-                }
-
-                /*
-                 * Validate the handler partial list
-                 */
-                if ($partialList = trim(Request::header('X_OCTOBER_REQUEST_PARTIALS'))) {
-                    $partialList = explode('&', $partialList);
-                } else {
-                    $partialList = [];
-                }
-
-                $responseContents = [];
-
-                /*
-                 * Execute the handler
-                 */
-                if (!$result = $this->runAjaxHandler($handler)) {
-                    throw new ApplicationException(Lang::get('cms::lang.ajax_handler.not_found', ['name'=>$handler]));
-                }
-
-                /*
-                 * Render partials and return the response as array that will be converted to JSON automatically.
-                 */
-                foreach ($partialList as $partial) {
-                    $responseContents[$partial] = $this->makePartial($partial);
-                }
-
-                /*
-                 * If the handler returned a redirect, process the URL and dispose of it so
-                 * framework.js knows to redirect the browser and not the request!
-                 */
-                if ($result instanceof RedirectResponse) {
-                    $responseContents['X_OCTOBER_REDIRECT'] = $result->getTargetUrl();
-                    $result = null;
-                } /*
-                 * No redirect is used, look for any flash messages
-                 */
-                elseif (Flash::check()) {
-                    $responseContents['#layout-flash-messages'] = $this->makeLayoutPartial('flash_messages');
-                }
-
-                /*
-                 * Detect assets
-                 */
-                if ($this->hasAssetsDefined()) {
-                    $responseContents['X_OCTOBER_ASSETS'] = $this->getAssetPaths();
-                }
-
-                /*
-                 * If the handler returned an array, we should add it to output for rendering.
-                 * If it is a string, add it to the array with the key "result".
-                 * If an object, pass it to Laravel as a response object.
-                 */
-                if (is_array($result)) {
-                    $responseContents = array_merge($responseContents, $result);
-                } elseif (is_string($result)) {
-                    $responseContents['result'] = $result;
-                } elseif (is_object($result)) {
-                    return $result;
-                }
-
-                return Response::make()->setContent($responseContents);
-            } catch (ValidationException $ex) {
-                /*
-                 * Handle validation error gracefully
-                 */
-                Flash::error($ex->getMessage());
-                $responseContents = [];
-                $responseContents['#layout-flash-messages'] = $this->makeLayoutPartial('flash_messages');
-                $responseContents['X_OCTOBER_ERROR_FIELDS'] = $ex->getFields();
-                throw new AjaxException($responseContents);
-            } catch (MassAssignmentException $ex) {
-                throw new ApplicationException(Lang::get('backend::lang.model.mass_assignment_failed', ['attribute' => $ex->getMessage()]));
-            } catch (Exception $ex) {
-                throw $ex;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Tries to find and run an AJAX handler in the page action.
-     * The method stops as soon as the handler is found.
-     * @return boolean Returns true if the handler was found. Returns false otherwise.
-     */
-    protected function runAjaxHandler($handler)
-    {
-        /*
-         * Process Widget handler
-         */
-        if (strpos($handler, '::')) {
-            list($widgetName, $handlerName) = explode('::', $handler);
-
-            /*
-             * Execute the page action so widgets are initialized
-             */
-            $this->pageAction();
-
-            if ($this->fatalError) {
-                throw new SystemException($this->fatalError);
-            }
-
-            if (!isset($this->widget->{$widgetName})) {
-                throw new SystemException(Lang::get('backend::lang.widget.not_bound', ['name'=>$widgetName]));
-            }
-
-            if (($widget = $this->widget->{$widgetName}) && $widget->methodExists($handlerName)) {
-                $result = $this->runAjaxHandlerForWidget($widget, $handlerName);
-                return ($result) ?: true;
-            }
-        } else {
-            /*
-             * Process page specific handler (index_onSomething)
-             */
-            $pageHandler = $this->action . '_' . $handler;
-
-            if ($this->methodExists($pageHandler)) {
-                $result = call_user_func_array([$this, $pageHandler], $this->params);
-                return ($result) ?: true;
-            }
-
-            /*
-             * Process page global handler (onSomething)
-             */
-            if ($this->methodExists($handler)) {
-                $result = call_user_func_array([$this, $handler], $this->params);
-                return ($result) ?: true;
-            }
-
-            /*
-             * Cycle each widget to locate a usable handler (widget::onSomething)
-             */
-            $this->suppressView = true;
-            $this->execPageAction($this->action, $this->params);
-
-            foreach ((array) $this->widget as $widget) {
-                if ($widget->methodExists($handler)) {
-                    $result = $this->runAjaxHandlerForWidget($widget, $handler);
-                    return ($result) ?: true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Specific code for executing an AJAX handler for a widget.
-     * This will append the widget view paths to the controller and merge the vars.
-     * @return mixed
-     */
-    protected function runAjaxHandlerForWidget($widget, $handler)
-    {
-        $this->addViewPath($widget->getViewPaths());
-
-        $result = call_user_func_array([$widget, $handler], $this->params);
-
-        $this->vars = $widget->vars + $this->vars;
-
-        return $result;
+        return $this->makeViewContent($result);*/
     }
 
     /**

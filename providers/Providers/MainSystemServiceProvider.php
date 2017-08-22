@@ -53,7 +53,6 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 	{
 		$this->addPathSymboles();
 		$this->registerModulesLanguageViewsAndConfig();
-		$this->registerRoutes();
 		$this->registerHelpers();
 		$this->registerTwigParser();
 		$this->registerMailer();
@@ -61,6 +60,7 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 		$this->registerWidgets();
 		$this->registerExceptionHandler();
 		$this->registerExtenstionFunctionality();
+
 
 		$this->registerBePermissions();
 
@@ -76,6 +76,7 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 	 */
 	public function boot()
 	{
+		$this->registerRoutes();
 	}
 
 	/*
@@ -136,7 +137,6 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 
 	public function registerRoutes()
 	{
-
 		// strickly do not allow backend to anyone without main backend controller
 		Route::group(['prefix'=>'backend'], function () {
 			Route::any('/', function () {
@@ -155,12 +155,17 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 			Route::any('{slug}', '\HS\Classes\BackendController@run')->where('slug', '(.*)?');
 		});
 
+		// for api requests
+		// $this->app['router']->aliasMiddleware('auth', \HS\Middleware\Authenticate::class);
+		Route::group(['prefix' => 'v1/api'], function () {
+			Route::any('/', '\HS\Controllers\Backend\Api@run');
+			Route::any('{slug}', '\HS\Controllers\Backend\Api@run')->where('slug', '(.*)?');
+		});
 
-		Route::any('{slug}', '\HS\Classes\FrontendController@run')->where('slug', '(.*)?');
+		Route::any('{slug}', '\HS\Classes\FrontendController@run')->where('slug', '(.*)?')->middleware('web');
 
 		$routesFile = base_path() . '/config/routes.php';
 		require $routesFile;
-
 		/*Route::group(['namespace' => 'HS\Providers'], function () {
 		Route::any('{slug}', '\HS\Providers\MainController@run')->where('slug', '(.*)?');
 		});*/
@@ -199,12 +204,25 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 			return \HS\AuthManager\BeAuthManager::instance();
 		});
 
-		$alias = AliasLoader::getInstance();
-		$alias->alias('Auth', 'HS\Facades\Auth');
-
 		App::singleton('frontend.auth', function () {
 			return \HS\AuthManager\FeAuthManager::instance();
 		});
+
+		// for api usage
+		App::singleton('auth', function ($app) {
+		 	return new \HS\AuthManager\ApiAuthManager($app);
+ 		});
+
+		$alias = AliasLoader::getInstance();
+		$alias->alias('FeAuth', 'HS\Facades\FeAuth');
+		$alias->alias('Auth', 'HS\Facades\ApiAuth');
+		$alias->alias('ApiAuth', 'HS\Facades\ApiAuth');
+		// $alias->alias('auth', 'HS\Facades\ApiAuth');
+
+		// $alias->alias('auth', \Illuminate\Contracts\Auth\Factory::class);
+		// $alias->alias('auth', \Illuminate\Auth\AuthManager::class);
+		// $this->app->alias('auth', \Illuminate\Contracts\Auth\Factory::class);
+		// echo "<pre/>";print_r(get_class_methods($alias));exit();
 	}
 
 	 /**

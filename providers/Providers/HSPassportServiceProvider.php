@@ -25,12 +25,12 @@ class HSPassportServiceProvider extends ServiceProvider
         }*/
 
         // HsPassport::routes($this->app, ['prefix' => 'v1/oauth']);
-        HSPassport::routes();
     }
     /**
      * @return void
      */
     public function register()
     {
+        HSPassport::routes();
     }
 }

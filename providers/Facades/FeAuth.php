@@ -2,7 +2,7 @@
 
 use October\Rain\Support\Facade;
 
-class Auth extends Facade
+class FeAuth extends Facade
 {
     /**
      * Get the registered name of the component.

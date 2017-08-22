@@ -1,15 +1,13 @@
-{{ form_ajax('onUpdate', { model: user }) }}
-
-	{{ debug() }}
+<?= Form::ajax('onUpdate', ['model' => $user]); ?>
 
     <div class="form-group">
         <label for="accountName">Full Name</label>
-        <input name="name" type="text" class="form-control" id="accountName" value="{{ form_value('name') }}">
+        <input name="name" type="text" class="form-control" id="accountName" value="<?= Form::value('name') ?>">
     </div>
 
     <div class="form-group">
         <label for="accountEmail">Email</label>
-        <input name="email" type="email" class="form-control" id="accountEmail" value="{{ form_value('email') }}">
+        <input name="email" type="email" class="form-control" id="accountEmail" value="<?= Form::value('email') ?>">
     </div>
 
     <div class="form-group">
@@ -23,5 +21,4 @@
     </div>
 
     <button type="submit" class="btn btn-default">Save</button>
-
-{{ form_close() }}
+<?= Form::close() ?>

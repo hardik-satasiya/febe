@@ -6,10 +6,12 @@ use Mail;
 use Event;
 use October\Rain\Auth\Models\User as UserBase;
 use HS\Models\User\Settings as UserSettings;
+use Laravel\Passport\HasApiTokens;
+use Illuminate\Auth\Authenticatable;
 
 class User extends UserBase
 {
-    use \October\Rain\Database\Traits\SoftDeleting;
+    use \October\Rain\Database\Traits\SoftDeleting, HasApiTokens, Authenticatable;
 
     /**
      * @var string The database table used by the model.

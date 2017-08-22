@@ -10,16 +10,10 @@
 <?php
     $coreBuild = System\Models\Parameter::get('system::core.build', 1);
 ?>
-<script>
-var hDebug = true;
-function hdebug(vari) {
-	console.trace();
-}
-</script>
 <link href="<?= URL::asset('modules/system/assets/ui/storm.css') ?>?v<?= $coreBuild ?>" rel="stylesheet">
 <link href="<?= URL::asset('modules/backend/assets/css/october.css') ?>?v<?= $coreBuild ?>" rel="stylesheet">
 
-<link href="<?= URL::asset('assets/static/app.css') ?>?v<?= $coreBuild ?>" rel="stylesheet">
+<!-- <link href="<?= URL::asset('assets/static/app.css') ?>?v<?= $coreBuild ?>" rel="stylesheet"> -->
 
 <script src="<?= URL::asset('modules/backend/assets/js/vendor/jquery.min.js') ?>?v<?= $coreBuild ?>"></script>
 <script src="<?= URL::asset('modules/system/assets/js/framework.js') ?>?v<?= $coreBuild ?>"></script>

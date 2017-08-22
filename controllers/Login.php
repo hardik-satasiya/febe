@@ -1,6 +1,7 @@
 <?php
 namespace HS\Controllers;
 
+use Route;
 use Auth;
 use Flash;
 use Event;
@@ -10,6 +11,8 @@ use Validator;
 use Request;
 use Lang;
 use Mail;
+use GuzzleHttp;
+use Response;
 
 use ValidationException;
 use ApplicationException;
@@ -42,6 +45,47 @@ class Login extends BaseController
         $user = Auth::getUser();
         $this->vars['user'] = $user;
         $this->vars['loginAttributeLabel'] = $this->loginAttribute();
+    }
+
+    public function api() {
+
+        // token
+        // eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjJjYjVmZWRkMWM5ZjgxN2Y5ZjFkMWZjNzE3Y2QxZjljNmNkOGIwNmM4ZjAzMTgxOWQ5NDcwNGJlNTY2NWE4ODE2ZTA5NWI4YWUyZWE0OGM1In0.eyJhdWQiOiIyIiwianRpIjoiMmNiNWZlZGQxYzlmODE3ZjlmMWQxZmM3MTdjZDFmOWM2Y2Q4YjA2YzhmMDMxODE5ZDk0NzA0YmU1NjY1YTg4MTZlMDk1YjhhZTJlYTQ4YzUiLCJpYXQiOjE1MDMzMTMxNzUsIm5iZiI6MTUwMzMxMzE3NSwiZXhwIjoxNTM0ODQ5MTc1LCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.aoi8Iy2u46iyiRoDQQn5O20AOfYUKuVEYTdIdlKDGQHzw5HnDnxIClkwJvLfbH6G-EaIW7g911OULUlnQidpPufYQkNMWZCXze8RCdM67EOwPTB7cTMgbRG50a2wuWME5fRPqJqcC2fN4vmKjzEcIVu9boy6RAVw3QTBxQn5UuSpNSBcM6uj-cokWk_Z_5OjTOyYhTEKFFJKUm2iEr15DSUmePECa9ppmDF7c07hLDeaqpWrVMdDi_HGGKaLuaj7NvxPMPZWB8W9nP6g2aRtgHZxBaPCs7rNTLA2qB2sJt_yELy69Y-hormmkPINxjI8JVa55oIBAAH0P6EQPIy_1Zm5RSmVAkQXlEiKkWaN9eXAcafpGQf71dSWYOgERannFLeMhoSW9nzEGN0jI3k2tJJ32baZ4u8RoquUvvuIewyph29HtK_483lTNUKMnrcUCmYQhLKEszBAHrdTAs8H03GCurJqRTB8hBRMym2y0de2pQ3eYB0Z0WZNeiXrnAucH5xw_jTzol2OsOJjHmVveRf8mUZGo5F6Ud0E4mdVDe7WSA4hBo3BXQQ1W0l-HlGTZZhYsydFkuiUQNHXGneDnkTxNZo4ZpuQvhCkFaIDuh_8E_BPjgR8sH9y1_4TsfM6QaZEYjKZ8DUhHj5DgfjS0GM875JyRe4CEFJ40DRhcUk
+
+        // api call for v1
+        ini_set('display_errors',1);
+        error_reporting(E_ALL);
+        $http = new GuzzleHttp\Client;
+        $output = [];
+        try {
+            $response = $http->post('http://7.localhost/vuejs/my_frame_work_ready/my-framework-dist/v1/oauth/token', [
+                'form_params' => [
+                    'grant_type' => 'password',
+                    'client_id' => '2',
+                    'client_secret' => 'ZcIOc2dgyt2JdVUjEQJsLl09d2pGEMAW5A6R4epH',
+                    'username' => 'hardik@admin.com',
+                    'password' => 'pass##',
+                    'scope' => '',
+                ],
+            ]);
+        } catch (\Exception $e) {
+
+            $response = $e->getResponse();
+            if(!empty(json_decode((string) $response->getBody(), true))) {
+                $output = json_decode((string) $response->getBody(), true);
+                return Response::json($output);
+            }
+
+            $output = ['error' => (string) $response->getBody()];
+            return Response::json($output);
+            // echo "<pre/>";print_r($e);exit();
+            // $response = $e->getResponse();
+            // return json_decode((string) $response->getBody(), true);
+        }
+
+        $output = json_decode((string) $response->getBody(), true);
+
+        return Response::json($output);
     }
 
     /**
@@ -275,7 +319,7 @@ class Login extends BaseController
      */
     public function onUpdate()
     {
-        if (!$user = $this->user()) {
+        if (!$user = Auth::getUser()) {
             return;
         }
 
@@ -304,7 +348,7 @@ class Login extends BaseController
      */
     public function onDeactivate()
     {
-        if (!$user = $this->user()) {
+        if (!$user = Auth::getUser()) {
             return;
         }
 
@@ -331,7 +375,7 @@ class Login extends BaseController
     public function onSendActivationEmail()
     {
         try {
-            if (!$user = $this->user()) {
+            if (!$user = Auth::getUser()) {
                 throw new ApplicationException(Lang::get('app::lang.account.login_first'));
             }
 
@@ -456,8 +500,7 @@ class Login extends BaseController
      */
     protected function makeRedirection()
     {
-        $redirectUrl = $this->pageUrl($this->property('redirect'))
-            ?: $this->property('redirect');
+        $redirectUrl = url()->current();
 
         if ($redirectUrl = post('redirect', $redirectUrl)) {
             return Redirect::to($redirectUrl);

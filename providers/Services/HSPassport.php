@@ -63,8 +63,8 @@ class HSPassport
     {
 
          // strickly do not allow backend to anyone without main backend controller
-        Route::group(['prefix'=>'oauth', 'namespace' => '\Laravel\Passport\Http\Controllers'], function () use ($callback) {
-            $routes = new HSPassportRouteRegistrar($callback);
+        Route::group(['prefix'=>'v1/oauth'], function () {
+            $routes = new HSPassportRouteRegistrar();
             $routes->all();
         });
 

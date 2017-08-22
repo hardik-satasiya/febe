@@ -4,6 +4,7 @@ namespace HS\Controllers;
 
 use Flash;
 use BackendMenu;
+use Response;
 
 use HS\Controllers\BaseController;
 
@@ -26,6 +27,8 @@ class Index extends BaseController
 
     public function index()
     {
+
+        // otehr code
         $this->addJs('js/main.js');
         $this->addCss('css/main.css');
 

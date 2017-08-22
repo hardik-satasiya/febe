@@ -1,32 +1,22 @@
-<?php namespace HS\Classes;
+<?php namespace HS\Controllers\Backend;
 
-use Str;
-use App;
-use File;
+use Flash;
+use BackendMenu;
 use Auth;
-use View;
-use Config;
+use GuzzleHttp;
 use Response;
+use Request;
+use App;
+use Str;
+use File;
 use Exception;
-use Illuminate\Routing\Controller as ControllerBase;
+
+use Illuminate\Routing\Controller as BaseController;
 use October\Rain\Router\Helper as RouterHelper;
-use Closure;
 
-/**
- * The Backend controller class.
- * The base controller services back end pages.
- *
- * @package october\backend
- * @author Alexey Bobkov, Samuel Georges
- */
-class FrontendController extends ControllerBase
+class Api extends BaseController
 {
-    use \October\Rain\Extension\ExtendableTrait;
-
-    /**
-     * @var array Behaviors implemented by this controller.
-     */
-    public $implement;
+    public $implement = [];
 
     /**
      * @var string Allows early access to page action.
@@ -38,55 +28,10 @@ class FrontendController extends ControllerBase
      */
     public static $params;
 
-    /**
-     * Instantiate a new BackendController instance.
-     */
-    public function __construct()
-    {
-        $this->extendableConstruct();
-    }
 
-    /**
-     * Extend this object properties upon construction.
-     */
-    public static function extend(Closure $callback)
-    {
-        self::extendableExtendCallback($callback);
-    }
-
-    /**
-     * Finds and serves the requested backend controller.
-     * If the controller cannot be found, returns the Cms page with the URL /404.
-     * If the /404 page doesn't exist, returns the system 404 page.
-     * @param string $url Specifies the requested page URL.
-     * If the parameter is omitted, the current URL used.
-     * @return string Returns the processed page content.
-     */
     public function run($url = null)
     {
-
         $params = RouterHelper::segmentizeUrl($url);
-
-        /*
-         * Database check
-         */
-        if (!App::hasDatabase()) {
-            return Config::get('app.debug', false)
-                ? Response::make(View::make('backend::no_database'), 200)
-                : App::make('Cms\Classes\Controller')->run($url);
-        }
-
-        /*
-         * Look for a Files
-         */
-        if (Str::startsWith($url, 'backend/files/')) {
-            array_shift($params);
-            array_shift($params);
-            $action = $params[0];
-            array_shift($params);
-            $controllerObj = App::make('Backend\Controllers\Files');
-            return $controllerObj->run($action, $params);
-        }
 
         /*
          * Database check
@@ -109,7 +54,7 @@ class FrontendController extends ControllerBase
             });
             for ($i = $counterClassEmel; $i >= 0; $i--) {
                 $predicatedClass = '\\HS\\Controllers\\' . Str::studly(implode('\\', $paramClone));
-
+                // $predicatedClass . '\Index';
                 $predicatedPath = implode('/', $paramClone);
                 $predicatedPath = base_path() . '/controllers/' . $predicatedPath;
 
@@ -156,25 +101,6 @@ class FrontendController extends ControllerBase
 
 
         /*
-         * Look for a Plugin controller
-         * @forme
-         */
-        if (count($params) >= 2) {
-            list($author, $plugin) = $params;
-            $controller = isset($params[2]) ? $params[2] : 'index';
-            self::$action = $action = isset($params[3]) ? $this->parseAction($params[3]) : 'index';
-            self::$params = $controllerParams = array_slice($params, 4);
-            $controllerClass = '\\'.$author.'\\'.$plugin.'\Controllers\\'.$controller;
-            if ($controllerObj = $this->findController(
-                $controllerClass,
-                $action,
-                plugins_path()
-            )) {
-                return $controllerObj->run($action, $controllerParams);
-            }
-        }
-
-        /*
          * Fall back to Default index controller
          */
         $controller = 'Index';
@@ -190,8 +116,7 @@ class FrontendController extends ControllerBase
         }
 
 
-
-        throw new Exception("No Default(Index) Controller Found.", 1);
+        throw new Exception("No Api Controller Found. {$controllerClass}", 1);
     }
 
     /**
@@ -205,10 +130,11 @@ class FrontendController extends ControllerBase
     protected function findController($controller, $action, $inPath)
     {
 
+        // for api usage
+        $controller = $controller . 'Api';
         /*
          * Workaround: Composer does not support case insensitivity.
          */
-        // http://7.localhost/vuejs/oct/backend/system/updates%5C..%5C..%5C..%5C..%5Ctestfile:%5C%5Ctest?cmd=ls
         if (!class_exists($controller)) {
             $controller = Str::normalizeClassName($controller);
             $controllerFile = $inPath.strtolower(str_replace('\\', '/', $controller)) . '.php';
@@ -216,7 +142,6 @@ class FrontendController extends ControllerBase
                 include_once($controllerFile);
             }
         }
-
         if (!class_exists($controller)) {
             return false;
         }

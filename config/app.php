@@ -29,7 +29,7 @@ return [
     |
     */
 
-    'url' => 'http://7.localhost/vuejs/my-framework/',
+    'url' => 'http://7.localhost/vuejs/my_frame_work_ready/my-framework-dist/',
 
     /*
     |--------------------------------------------------------------------------
@@ -115,6 +115,8 @@ return [
 
         // 'Illuminate\Html\HtmlServiceProvider', // Example
         'HS\Providers\MainSystemServiceProvider',
+        'HS\Providers\HSPassportServiceProvider',
+        'Laravel\Passport\PassportServiceProvider',
         // 'System\ServiceProvider',
     ]),
 
