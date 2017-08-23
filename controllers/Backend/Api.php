@@ -77,6 +77,9 @@ class Api extends BaseController
         }
 
 
+        /*
+         * Execute
+         */
         $controllerClassPath = base_path().'/controllers';
         if ($innerControllerFound) {
             $controller = $predicatedClass;
@@ -103,7 +106,7 @@ class Api extends BaseController
         /*
          * Fall back to Default index controller
          */
-        $controller = 'Index';
+        /*$controller = 'Index';
         self::$action = $action = 'index';
         self::$params = $controllerParams = [];
         $controllerClass = '\\HS\\Controllers\\'.ucfirst($controller);
@@ -113,10 +116,10 @@ class Api extends BaseController
             base_path().'/controllers'
         )) {
             return $controllerObj->run($action, $controllerParams);
-        }
+        }*/
 
 
-        throw new Exception("No Api Controller Found. {$controllerClass}", 1);
+        throw new Exception("No Route Found. {$controllerClass}Api->{$action}()", 1);
     }
 
     /**

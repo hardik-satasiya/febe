@@ -23,7 +23,7 @@ mix.inProduction();
 
 mix.js('src/app.js', 'static/')
    .sass('src/app.scss', 'static/')
-   //.sourceMaps()
+   .sourceMaps()
    .setPublicPath('assets/');
 
 // Full API

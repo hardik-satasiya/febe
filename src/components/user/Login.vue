@@ -31,8 +31,8 @@ export default {
         return {
             errors: 'no errors',
             user: {
-                email:'admin@admin.com',
-                password: 'pass@123'
+                email:'hardik@admin.com',
+                password: 'pass'
             },
             bannerTitle: 'Login',
             message: 'Lorem ipsum dolor sit amet, consectetur adipisicing elit. Asperiores debitis, hic! Itaque recusandae amet aut aperiam tempora optio adipisci similique ipsum sequi aspernatur labore rerum quo natus doloribus, necessitatibus expedita?'
@@ -41,7 +41,9 @@ export default {
     created() {
         var self = this
         this.signInErrorEventHandler = function(error) {
-            self.errors = error
+
+            $.oc.flashMsg({ text: error.data.message, class: 'error'})
+            // self.errors = error.message
         }
         this.signInEventHandler = function() {
             // console.log(self.$router)

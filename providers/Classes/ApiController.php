@@ -213,7 +213,7 @@ class ApiController extends Extendable
              * Not logged in
              */
             if (ApiAuth::guard()->guest()) {
-                return response('Unauthorized.', 401);
+                return response(['message' => 'Unauthorized.'], 401);
             }
 
             /*

@@ -61,6 +61,6 @@ export default {
     background-image: url(../../assets/images/pexels-photo-534164.jpeg);
 }
 .hero_banner_text {
-    color: $hardikcolor;
+    color: yellow;
 }
 </style>

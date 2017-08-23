@@ -1,4 +1,4 @@
-// import auth from './auth'
+import auth from './auth'
 import { EventBus } from './eventBus';
 
 // mixin.js
@@ -12,8 +12,7 @@ export default {
 
     computed: {
         auth() {
-            return '123'
-            // return auth
+            return auth
         }
     },
 

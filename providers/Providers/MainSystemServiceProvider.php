@@ -156,7 +156,7 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 		});
 
 		// for api requests
-		// $this->app['router']->aliasMiddleware('auth', \HS\Middleware\Authenticate::class);
+		$this->app['router']->aliasMiddleware('auth', \HS\Middleware\ApiAuthenticate::class); // required for default passport routes
 		Route::group(['prefix' => 'v1/api'], function () {
 			Route::any('/', '\HS\Controllers\Backend\Api@run');
 			Route::any('{slug}', '\HS\Controllers\Backend\Api@run')->where('slug', '(.*)?');
@@ -219,6 +219,7 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 		$alias->alias('ApiAuth', 'HS\Facades\ApiAuth');
 		// $alias->alias('auth', 'HS\Facades\ApiAuth');
 
+		// required for the default passport usage.
 		// $alias->alias('auth', \Illuminate\Contracts\Auth\Factory::class);
 		// $alias->alias('auth', \Illuminate\Auth\AuthManager::class);
 		// $this->app->alias('auth', \Illuminate\Contracts\Auth\Factory::class);

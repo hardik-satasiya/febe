@@ -1,5 +1,6 @@
 <?php namespace HS\Controllers;
 
+use DB;
 use ApiAuth;
 use Flash;
 use BackendMenu;
@@ -11,6 +12,9 @@ use App;
 use Str;
 use File;
 use Exception;
+
+use Laravel\Passport\Token;
+use Lcobucci\JWT\Parser as JwtParser;
 
 use HS\Classes\ApiController as BaseController;
 use October\Rain\Router\Helper as RouterHelper;
@@ -31,6 +35,7 @@ class LoginApi extends BaseController
 
     public function token()
     {
+        // echo "<pre/>";print_r($_REQUEST);exit();
         $http = new GuzzleHttp\Client;
         $output = [];
         try {
@@ -39,8 +44,8 @@ class LoginApi extends BaseController
                     'grant_type' => 'password',
                     'client_id' => '2',
                     'client_secret' => 'ZcIOc2dgyt2JdVUjEQJsLl09d2pGEMAW5A6R4epH',
-                    'username' => 'hardik@admin.com',
-                    'password' => 'pass',
+                    'username' => post('email'), // 'hardik@admin.com1',
+                    'password' => post('password'), //'pass',
                     'scope' => '',
                 ],
             ]);
@@ -49,24 +54,40 @@ class LoginApi extends BaseController
             $response = $e->getResponse();
             if(!empty(json_decode((string) $response->getBody(), true))) {
                 $output = json_decode((string) $response->getBody(), true);
-                return Response::json($output);
+                return Response::json($output, 406);
             }
 
             $output = ['error' => (string) $response->getBody()];
-            return Response::json($output);
+            return Response::json($output, 406);
         }
 
         $output = json_decode((string) $response->getBody(), true);
         return $output;
     }
 
-    public function logout()
+    public function logout($token = '')
     {
-        return 'logout';
+        $parser = new JwtParser();
+        $tokenId = $parser->parse($token)->getClaim('jti');
+
+        // revoke main token
+        $token = Token::find($tokenId);
+        $token->update(['revoked' => true]);
+
+        // revoke refresh token
+        DB::table('oauth_refresh_tokens')
+                    ->where('access_token_id', $tokenId)->update(['revoked' => true]);
+
+        return ['message' => 'success'];
+    }
+
+    public function user() {
+        return ApiAuth::user();
     }
 
     public function protectedAction()
     {
+        return $this->makePartial('protected');
         return 'Protected Content.';
         return ApiAuth::user(); //'Protected Content.';
     }
