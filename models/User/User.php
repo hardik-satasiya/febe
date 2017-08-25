@@ -69,6 +69,16 @@ class User extends UserBase
     public static $loginAttribute = null;
 
     /**
+     * Get the column name for the "remember me" token.
+     *
+     * @return string
+     */
+    public function getRememberTokenName()
+    {
+        return 'persist_code';
+    }
+
+    /**
      * Sends the confirmation email to a user, after activating.
      * @param  string $code
      * @return void
