@@ -105,8 +105,9 @@ class BackendController extends ControllerBase
                     if (empty($predicatedAction)) {
                         $predicatedAction = 'index';
                     }
+                    $controllerObj = App::make($predicatedClass);
                     // if action not found then set index action and pass as params
-                    if(!method_exists($predicatedClass, $predicatedAction)) {
+                    if(!$controllerObj->actionExists($predicatedAction)) {
                         // restore params and set default action to index
                         $predicatedAction = 'index';
                         $predicatedControllerParams = $backUpParams;
