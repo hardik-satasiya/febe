@@ -1,7 +1,7 @@
 <?php namespace HS\Models\User;
 
 use Str;
-use Auth;
+use FeAuth;
 use Mail;
 use Event;
 use October\Rain\Auth\Models\User as UserBase;
@@ -67,6 +67,16 @@ class User extends UserBase
     ];
 
     public static $loginAttribute = null;
+
+    /**
+     * Get the column name for the "remember me" token.
+     *
+     * @return string
+     */
+    public function getRememberTokenName()
+    {
+        return 'persist_code';
+    }
 
     /**
      * Sends the confirmation email to a user, after activating.
@@ -294,7 +304,7 @@ class User extends UserBase
      */
     public function ban()
     {
-        Auth::findThrottleByUserId($this->id)->ban();
+        FeAuth::findThrottleByUserId($this->id)->ban();
     }
 
     /**
@@ -303,7 +313,7 @@ class User extends UserBase
      */
     public function unban()
     {
-        Auth::findThrottleByUserId($this->id)->unban();
+        FeAuth::findThrottleByUserId($this->id)->unban();
     }
 
     /**
@@ -312,7 +322,7 @@ class User extends UserBase
      */
     public function isBanned()
     {
-        $throttle = Auth::createThrottleModel()->where('user_id', $this->id)->first();
+        $throttle = FeAuth::createThrottleModel()->where('user_id', $this->id)->first();
         return $throttle ? $throttle->is_banned : false;
     }
 

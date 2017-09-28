@@ -100,13 +100,22 @@ class BackendController extends ControllerBase
 
                 if (class_exists($predicatedClass)) {
                     $predicatedControllerParams = array_slice($params, $i + 1);
+                    $backUpParams = $predicatedControllerParams;
                     $predicatedAction = array_shift($predicatedControllerParams);
                     if (empty($predicatedAction)) {
                         $predicatedAction = 'index';
                     }
+                    $controllerObj = App::make($predicatedClass);
+                    // if action not found then set index action and pass as params
+                    if(!$controllerObj->actionExists($predicatedAction)) {
+                        // restore params and set default action to index
+                        $predicatedAction = 'index';
+                        $predicatedControllerParams = $backUpParams;
+                    }
                     $innerControllerFound = true;
                     break;
                 }
+
                 unset($paramClone[$i]);
             }
         }
@@ -123,7 +132,7 @@ class BackendController extends ControllerBase
             $controller = isset($params[0]) ? $params[0] : '';
             self::$action = $action = isset($params[1]) ? $this->parseAction($params[1]) : 'index';
             self::$params = $controllerParams = array_slice($params, 2);
-            $controllerClass = '\\HS\\Controllers\\Backend\\'. ucfirst($controller);
+            $controllerClass = '\\HS\\Controllers\\Backend\\'. Str::studly($controller);
         }
 
         if ($controllerObj = $this->findController(
@@ -141,7 +150,7 @@ class BackendController extends ControllerBase
         $controller = 'Index';
         self::$action = $action = 'index';
         self::$params = $controllerParams = [];
-        $controllerClass = '\\HS\\Controllers\\Backend\\'.ucfirst($controller);
+        $controllerClass = '\\HS\\Controllers\\Backend\\'. Str::studly($controller);
         if ($controllerObj = $this->findController (
             $controllerClass,
             $action,

@@ -7,6 +7,7 @@ use Auth;
 use View;
 use Config;
 use Response;
+use Request;
 use Exception;
 use Illuminate\Routing\Controller as ControllerBase;
 use October\Rain\Router\Helper as RouterHelper;
@@ -89,12 +90,20 @@ class FrontendController extends ControllerBase
         }
 
         /*
-         * Database check
+         * global ajax fixing
+         * data-handler="ajaxResponder::onLoginPopup<-Login"
+         * ajaxResponder::[onAction]<-[Controller]
          */
-        if (!App::hasDatabase()) {
-            return Config::get('app.debug', false)
-                ? Response::make(View::make('backend::no_database'), 200)
-                : App::make('Cms\Classes\Controller')->run($url);
+        if (Request::ajax() && $handler = Request::header('X_OCTOBER_REQUEST_HANDLER')) {
+
+            if(Str::startsWith($handler, 'ajaxResponder::')) {
+                $handlerParams = explode('::', $handler);
+                $handlerParams = explode('<-', $handlerParams[1]);
+                $newHandler = $handlerParams[0];
+                $newController = $handlerParams[1];
+                Request::instance()->headers->set('X_OCTOBER_REQUEST_HANDLER', $newHandler);
+                $params[0] = $newController;
+            }
         }
 
         /*
@@ -120,13 +129,22 @@ class FrontendController extends ControllerBase
 
                 if (class_exists($predicatedClass)) {
                     $predicatedControllerParams = array_slice($params, $i + 1);
+                    $backUpParams = $predicatedControllerParams;
                     $predicatedAction = array_shift($predicatedControllerParams);
                     if (empty($predicatedAction)) {
                         $predicatedAction = 'index';
                     }
+                    $controllerObj = App::make($predicatedClass);
+                    // if action not found then set index action and pass as params
+                    if(!$controllerObj->actionExists($predicatedAction)) {
+                        // restore params and set default action to index
+                        $predicatedAction = 'index';
+                        $predicatedControllerParams = $backUpParams;
+                    }
                     $innerControllerFound = true;
                     break;
                 }
+
                 unset($paramClone[$i]);
             }
         }
@@ -143,7 +161,7 @@ class FrontendController extends ControllerBase
             $controller = isset($params[0]) ? $params[0] : '';
             self::$action = $action = isset($params[1]) ? $this->parseAction($params[1]) : 'index';
             self::$params = $controllerParams = array_slice($params, 2);
-            $controllerClass = '\\HS\\Controllers\\'. ucfirst($controller);
+            $controllerClass = '\\HS\\Controllers\\'. Str::studly($controller);
         }
 
         if ($controllerObj = $this->findController(
@@ -180,7 +198,7 @@ class FrontendController extends ControllerBase
         $controller = 'Index';
         self::$action = $action = 'index';
         self::$params = $controllerParams = [];
-        $controllerClass = '\\HS\\Controllers\\'.ucfirst($controller);
+        $controllerClass = '\\HS\\Controllers\\'. Str::studly($controller);
         if ($controllerObj = $this->findController (
             $controllerClass,
             $action,
