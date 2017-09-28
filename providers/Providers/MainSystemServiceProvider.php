@@ -225,6 +225,11 @@ class MainSystemServiceProvider extends ModuleServiceProvider
 		// $alias->alias('auth', \Illuminate\Auth\AuthManager::class);
 		// $this->app->alias('auth', \Illuminate\Contracts\Auth\Factory::class);
 		// echo "<pre/>";print_r(get_class_methods($alias));exit();
+
+		// Override default Model Facade
+		{
+			$alias->alias('Model', 'HS\Classes\Model');
+		}
 	}
 
 	/*
